@@ -1,5 +1,5 @@
 # mari0_se_ce_to_ae_level_converter
-Convert Mari0 SE and CE levels to the format used by Mari0 AE. Works for tiles and most of the entites.
+Convert Mari0 SE and CE levels to the format used by Mari0 AE. Works for tiles and most of the entites. The version of SE used was Beta 7, it might work for other versions of SE though...
 
 ## How to use
 You need Python 3 and that's all, no need for other libraries!
