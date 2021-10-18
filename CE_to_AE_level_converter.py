@@ -22,6 +22,11 @@ dic_id_entity_replace = {
     10: 272
 }
 
+# Replace if using ogg for example
+convert_mp3 = 'mp3'
+# Replace if you want to convert cube to an enemy for example
+replace_box = None
+
 dic_id_entity_replace = {k: str(dic_id_entity_replace[k]) for k in dic_id_entity_replace}
 
 def get_new_id(id):
@@ -39,6 +44,11 @@ def get_coor_region(elem_split):
     x1 = region[3].replace('m', 'n')
     y1 = region[4].replace('m', 'n')
     return x0, y0, x1, y1
+    
+def check_if_invalid(new_body_table, x, y, length, height):
+    if x+1 > length or y+1> height or x < 0 or y< 0:
+        return True
+    return '-' in new_body_table[y][x]
 
 cwd = os.getcwd()
 
@@ -50,6 +60,7 @@ try:
 except:
     input("No folder 'in' found! Press enter to quit")
     raise
+
 
 for txt_level in list_in:
 
@@ -67,6 +78,8 @@ for txt_level in list_in:
         CE=True
         
     split_level = level.split(';')
+    
+    height = int(split_level[0])
 
     body = split_level[1].split(',')
     new_body = []
@@ -114,7 +127,7 @@ for txt_level in list_in:
                 metadata_tile = '{}-{}{}'.format(get_new_id(int(elem3)), elem_split[2], links)
                 
             # Various entities
-            elif int(elem3) in [14, 21, 31, 41, 32, 52, 36, 68, 40, 28, 74, 20, 93, 5, 30, 49, 9, 84, 82, 26, 67, 85, 2, 61, 37, 38, 39, 18, 4, 81, 35, 101, 89, 95, 96, 60, 91, 90, 80, 105, 10] or (int(elem3)==42 and CE):
+            elif int(elem3) in [14, 21, 31, 41, 32, 52, 36, 68, 40, 28, 74, 93, 5, 30, 49, 9, 84, 82, 26, 67, 85, 2, 61, 37, 38, 39, 18, 4, 81, 35, 101, 89, 95, 96, 60, 91, 90, 80, 105, 10] or (int(elem3)==42 and CE):
                 id_link = len(elem_split)
                 param1 = ''
                 if 'link' in elem_split[2:] and int(elem3) not in [105]:
@@ -126,7 +139,7 @@ for txt_level in list_in:
                 
                 # music
                 if int(elem3) in [4]:
-                    param0 = 'music/' + list_param[1] + '|1|false'
+                    param0 = 'music/' + list_param[2].replace('.', 'º').replace("mp3", convert_mp3) + '|1|false'
                 # funnel
                 elif int(elem3) in [105]:
                     links = ''
@@ -165,6 +178,9 @@ for txt_level in list_in:
                         
                     param0 = elem_split[2] + links
                     
+                # door
+                elif int(elem3) in [28]:
+                    param0 = list_param[2] + '|' + list_param[0] + '|' + list_param[1]
                 # x/v wall indicator
                 elif int(elem3) in [30]:
                     param0 = ''
@@ -176,7 +192,10 @@ for txt_level in list_in:
                     param0 = list_param[0] + '|' + list_param[1] + '|' + list_param[3] + '|' + list_param[2]
                 # gel
                 elif int(elem3) in [85]:
-                    param0 = list_param[0] + '|' + list_param[2] + '|' + list_param[4] + '|' + list_param[1] + '|' + list_param[3]
+                    if CE:
+                        param0 = list_param[0] + '|' + list_param[2] + '|' + list_param[1] + '|' + list_param[4] + '|' + list_param[3]
+                    else:
+                        param0 = list_param[0] + '|' + list_param[2] + '|' + list_param[1] + '|' + list_param[3] + '|' + list_param[4]
                 # spawnr platform
                 elif int(elem3) in [41]:
                     param0 = list_param[1] + '|' + list_param[2] + '|' + list_param[3] + '|' + list_param[0]
@@ -222,7 +241,7 @@ for txt_level in list_in:
                 
             # if animation trigger and not CE
             elif int(elem3) == 42 and not CE:
-                metadata_tile = str(get_new_id(int(elem3))) + '-' + elem_split[2]
+                metadata_tile = str(get_new_id(int(elem3))) + '-' + elem_split[2] + '-' + elem_split[3] + '-link-anim___to___replace-' + elem_split[4].split('region:')[1]
                 
             # Region trigger
             elif int(elem3) == 19:
@@ -287,13 +306,28 @@ for txt_level in list_in:
                 metadata_tile = '11-true|true'
             # Checkpoint
             elif int(elem3) == 100:
-                metadata_tile = '100'
+                if 'region' in elem_split[-1]:
+                    metadata_tile = '100-link-check___to___replace-' + elem_split[-1].split('region:')[1]
+                else:
+                    metadata_tile = '100'
+                    
+            # Box
+            elif int(elem3) == 20 
+                if replace_box is not None:
+                    metadata_tile = replace_box
+                else:
+                    metadata_tile = 20
+                
+            # antlines
             elif int(elem3) in [43, 44, 45, 46, 47, 48]:
                 metadata_tile = elem3
+                if 'link' in elem_split[2:]:
+                    metadata_tile += '-link-{}-{}'.format(elem_split[-2].replace('m', 'n'), elem_split[-1].replace('m', 'n'))
             else:
                 metadata_tile = '205|false|0'
 
             metadata_tile = '-' + metadata_tile
+            
 
         sub_elem = elem2.split('*')
 
@@ -321,56 +355,139 @@ for txt_level in list_in:
 
         new_body.append(sub_str + metadata_tile)
 
-        new_body_str = ','.join(new_body)
+    # Separate each tile
+    new_body_str = ','.join(new_body)
+    new_body_list = new_body_str.split(',')
+    
+    new_body_line = []
+    new_body_table = []
+    length = len(new_body_list) / height
+    
+    cpt = 0
+    
+    # Creates a list of list (for each line of the level)
+    for i in new_body_list:
         
-        dic_properties = {ele.split('=')[0]: ele.split('=')[1] for ele in split_level[2:] if '=' in ele}
-
-        # End of level metadata
-        new_properties = []
-        new_properties.append('height=' + split_level[0])
-        new_properties.append('background={},{},{}'.format(int(float(dic_properties["backgroundr"])), int(float(dic_properties["backgroundg"])), int(float(dic_properties["backgroundb"]))))
-        new_properties.append("spriteset=" + dic_properties["spriteset"])
-        new_properties.append('music=music/' + dic_properties["music"])
-        # Timelimit
-        new_properties.append('timelimit=' + dic_properties["timelimit"])
+        new_body_line.append(i)
+        cpt += 1
         
-        # background
-        if 'custombackground' in dic_properties:
-            new_properties.append('custombackground=' + dic_properties["custombackground"])
-        # foreground
-        if 'customforeground' in dic_properties:
-            new_properties.append('customforeground=' + dic_properties["customforeground"])
+        if cpt == length:
+            new_body_table.append(new_body_line)
+            new_body_line = []
+            cpt = 0
             
-        # scrollfactor background
-        new_properties.append('scrollfactor=' + dic_properties["scrollfactor"])
-        new_properties.append('scrollfactory=0')
-        # scrollfactor foreground
-        new_properties.append('scrollfactor2=' + dic_properties["fscrollfactor"])
-        new_properties.append('scrollfactor2y=0')
+    
+    dic_anim_check = {}
+    # Initialize dictionnary of animation and checkpoint that will need a region trigger
+    for y, line in enumerate(new_body_table):
+        for x, elem in enumerate(line):
+            # Animations
+            if "-link-anim___to___replace" in elem:
+                elems = elem.split('-')
+                dic_anim_check[elems[2] + '_' + str(x) + '_' + str(y)] = {'type':"animation", 'x':x, "y": y, 'player_only': elems[3], 'region': elems[-1]}
+            # Checkpoint
+            elif "-link-check___to___replace" in elem:
+                elems = elem.split('-')
+                dic_anim_check["checkpoint_entity_" + str(x) + '_' + str(y)] = {'type':"checkpoint", 'x':x, "y": y, 'region': elems[-1]}
+                
+
+    # print(dic_anim_check)
+    for key in dic_anim_check:
+        dic_prop_anim = dic_anim_check[key]
         
-        # portalgun
-        if 'portalgun' in dic_properties:
-            if dic_properties['portalgun']=='none':
-                new_properties.append('noportalgun')
-            elif dic_properties['portalgun']=='blue':
-                new_properties.append('portalguni=3')
-            else:
-                new_properties.append('portalguni=4')
+        # Radius in which the animation trigger can be placed (if no entity and not out of borders)
+        for radius in range(1, 3):
+            coor_check_x = [1, -1, 0, 0, 1, 1, -1,  -1]
+            coor_check_y = [0, 0, 1, -1, 1, -1, 1,  -1]
+            
+            for x_coor, y_coor in zip(coor_check_x, coor_check_y):
+                x_trigger, y_trigger = int(dic_prop_anim["x"]) + int(x_coor)*radius, int(dic_prop_anim["y"]) + int(y_coor)*radius
+                
+                # Check next coordinates if not valid
+                if check_if_invalid(new_body_table, x_trigger, y_trigger, length, height):
+                    continue
+                # Coordinates valid, so we add region trigger and update animation/checkpoint to be linked to region
+                else:
+                    # Initial offset of the region
+                    offset_x = int(dic_prop_anim["region"].split(':')[0].replace('m', '-'))
+                    offset_y = int(dic_prop_anim["region"].split(':')[1].replace('m', '-'))
+                    
+                    # Preparing region trigger
+                    region = "-200-{}|{}".format(dic_prop_anim["region"].split(':')[-2].replace('m', 'n'), dic_prop_anim["region"].split(':')[-1].replace('m', 'n'))
+                    region = region  + "|{}|{}|"
+                    if dic_prop_anim["type"] == "checkpoint" or dic_prop_anim["player_only"] == 'true':
+                        region += "player"
+                    else : 
+                        region += "everything" 
+                        
+                    if dic_prop_anim["type"] == "checkpoint":
+                        # Checkpoint trigger is linked to region trigger
+                        new_body_table[dic_prop_anim["y"]][dic_prop_anim["x"]] = "-".join(new_body_table[dic_prop_anim["y"]][dic_prop_anim["x"]].split("-")[0:2]) + '-link-' + str(x_trigger+1) + '-' + str(y_trigger+1)
+                    else:
+                        # Animation trigger is linked to region trigger
+                        new_body_table[dic_prop_anim["y"]][dic_prop_anim["x"]] = "-".join(new_body_table[dic_prop_anim["y"]][dic_prop_anim["x"]].split("-")[0:3]) + '-link-' + str(x_trigger+1) + '-' + str(y_trigger+1)
+                    
+                    # Region trigger area set
+                    new_body_table[y_trigger][x_trigger] = new_body_table[y_trigger][x_trigger] + region.format(str(offset_x - x_trigger+dic_prop_anim["x"]).replace('-', 'n'), str(offset_y - y_trigger+dic_prop_anim["y"]).replace('-', 'n'))
+                    # print(new_body_table[dic_prop_anim["y"]][dic_prop_anim["x"]])
+                    # print(new_body_table[y_trigger][x_trigger])    
+                    break
+            break
+    
+    # new_body_table is list of list so we flatten it
+    new_body_flat = [item for sublist in new_body_table for item in sublist]
+    new_body_str = ','.join(new_body_flat)
+    
+    dic_properties = {ele.split('=')[0]: ele.split('=')[1] for ele in split_level[2:] if '=' in ele}
+
+    # End of level metadata
+    new_properties = []
+    new_properties.append('height=' + str(height))
+    new_properties.append('background={},{},{}'.format(int(float(dic_properties["backgroundr"])), int(float(dic_properties["backgroundg"])), int(float(dic_properties["backgroundb"]))))
+    new_properties.append("spriteset=" + dic_properties["spriteset"])
+    new_properties.append('music=music/' + dic_properties["music"].replace("mp3", convert_mp3))
+    # Timelimit
+    new_properties.append('timelimit=' + dic_properties["timelimit"])
+    
+    # background
+    if 'custombackground' in dic_properties:
+        new_properties.append('custombackground=' + dic_properties["custombackground"])
+    # foreground
+    if 'customforeground' in dic_properties:
+        new_properties.append('customforeground=' + dic_properties["customforeground"])
+        
+    # scrollfactor background
+    new_properties.append('scrollfactor=' + dic_properties["scrollfactor"])
+    new_properties.append('scrollfactory=0')
+    # scrollfactor foreground
+    new_properties.append('scrollfactor2=' + dic_properties["fscrollfactor"])
+    new_properties.append('scrollfactor2y=0')
+    
+    # portalgun
+    if 'portalgun' in dic_properties:
+        if dic_properties['portalgun']=='none':
+            new_properties.append('noportalgun')
+        elif dic_properties['portalgun']=='blue':
+            new_properties.append('portalguni=3')
         else:
-            new_properties.append('portalguni=1')
+            new_properties.append('portalguni=4')
+    else:
+        new_properties.append('portalguni=1')
 
-        # version?
-        new_properties.append('vs=13.0117')
+    # version?
+    new_properties.append('vs=13.0122')
 
-        new_properties_str = ';'.join(new_properties)
+    new_properties_str = ';'.join(new_properties)
 
-        # Saving level
-        lvl_ae = new_body_str + ';' + new_properties_str
+    # Saving level
+    lvl_ae = new_body_str + ';' + new_properties_str
 
-        if 'out' not in os.listdir(path) or not os.path.isdir('out'):
-            os.mkdir(path + '\\' + 'out')
+    if 'out' not in os.listdir(path) or not os.path.isdir('out'):
+        os.mkdir(path + '\\' + 'out')
 
-        path_out = 'out\\' + txt_level
+    path_out = 'out\\' + txt_level
 
-        with open(path_out, 'w+') as f:
-            f.write(lvl_ae)
+    with open(path_out, 'w+') as f:
+        f.write(lvl_ae)
+        
+    print(txt_level, "done!")
