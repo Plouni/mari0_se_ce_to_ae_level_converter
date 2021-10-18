@@ -312,11 +312,11 @@ for txt_level in list_in:
                     metadata_tile = '100'
                     
             # Box
-            elif int(elem3) == 20 
+            elif int(elem3) == 20 :
                 if replace_box is not None:
                     metadata_tile = replace_box
                 else:
-                    metadata_tile = 20
+                    metadata_tile = '20'
                 
             # antlines
             elif int(elem3) in [43, 44, 45, 46, 47, 48]:
@@ -395,12 +395,15 @@ for txt_level in list_in:
     for key in dic_anim_check:
         dic_prop_anim = dic_anim_check[key]
         
-        # Radius in which the animation trigger can be placed (if no entity and not out of borders)
-        for radius in range(1, 3):
-            coor_check_x = [1, -1, 0, 0, 1, 1, -1,  -1]
-            coor_check_y = [0, 0, 1, -1, 1, -1, 1,  -1]
+        coor_check_x = [1, -1, 0, 0, 1, 1, -1,  -1]
+        coor_check_y = [0, 0, 1, -1, 1, -1, 1,  -1]
+        
+        break_for_coor = False
+        
+        for x_coor, y_coor in zip(coor_check_x, coor_check_y):
+            # Radius in which the animation trigger can be placed (if no entity and not out of borders)
+            for radius in range(1, 3):
             
-            for x_coor, y_coor in zip(coor_check_x, coor_check_y):
                 x_trigger, y_trigger = int(dic_prop_anim["x"]) + int(x_coor)*radius, int(dic_prop_anim["y"]) + int(y_coor)*radius
                 
                 # Check next coordinates if not valid
@@ -429,10 +432,13 @@ for txt_level in list_in:
                     
                     # Region trigger area set
                     new_body_table[y_trigger][x_trigger] = new_body_table[y_trigger][x_trigger] + region.format(str(offset_x - x_trigger+dic_prop_anim["x"]).replace('-', 'n'), str(offset_y - y_trigger+dic_prop_anim["y"]).replace('-', 'n'))
-                    # print(new_body_table[dic_prop_anim["y"]][dic_prop_anim["x"]])
-                    # print(new_body_table[y_trigger][x_trigger])    
+                    print(new_body_table[dic_prop_anim["y"]][dic_prop_anim["x"]])
+                    # print(new_body_table[y_trigger][x_trigger])
+                    
+                    break_for_coor = True
                     break
-            break
+            if break_for_coor:
+                break
     
     # new_body_table is list of list so we flatten it
     new_body_flat = [item for sublist in new_body_table for item in sublist]
