@@ -23,9 +23,9 @@ dic_id_entity_replace = {
 }
 
 # Replace if using ogg for example
-convert_mp3 = 'mp3'
+convert_mp3 = 'ogg'
 # Replace if you want to convert cube to an enemy for example
-replace_box = None
+replace_box = '0_box'
 
 dic_id_entity_replace = {k: str(dic_id_entity_replace[k]) for k in dic_id_entity_replace}
 

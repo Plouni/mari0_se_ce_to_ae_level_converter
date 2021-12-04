@@ -1,0 +1,1 @@
+for /r %%i in (*.mp3) do ffmpeg -i "%%i" -c:a libvorbis -q:a 4 "%%i.ogg"
